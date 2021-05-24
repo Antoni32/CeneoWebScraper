@@ -1,6 +1,7 @@
-from app.models.opinion import Opinion
 import requests
 from bs4 import BeautifulSoup
+from app.models.opinion import Opinion
+import json
 
 class Product:
     def __init__(self, product_id, product_name = None, opinions = []):
@@ -15,7 +16,7 @@ class Product:
             page_dom = BeautifulSoup(respons.text, "html.parser")
             opinions = page_dom.select("div.js_product-review")
             for opinion in opinions:
-                self.opinions.append(Opinion().extract_opinion(opinion))
+                self.opinions.append(Opinion().extract_opinion(opinion).transform_opinion())
             try:
                 next_page = "https://www.ceneo.pl" + \
                     page_dom.select("a.pagination__next").pop()["href"]
@@ -24,8 +25,19 @@ class Product:
             print(next_page)
 
     def __str__(self):
-        pass
+        return f"product_id: {self.product_id}\nproduct_name: {self.product_name}\nopinions:\n" + "\n\n".join(str(opinion) for opinion in self.opinions)
 
-    def __dict__(self):
-        pass
+    def __repr__(self):
+        return f"Product(product_id={self.product_id}, product_name={self.product_name}, opinions:=[" + ",".join(opinion.__repr__() for opinion in self.opinions) + "])"
+    
+    def to_dict(self):
+        return {
+            "product_id": self.product_id,
+            "product_name": self.product_name,
+            "opinions": [opinion.to_dict() for opinion in self.opinions]
+        }
+    
+    def dave_to_json(self):
+        with open(f"./products/self{self.product_id}.json", "w", encoding="UTF-8") as fp:
+            json.dump(self.to_dict(), fp, indent=4, ensure_ascii=False)
 
